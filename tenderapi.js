@@ -26,22 +26,22 @@ let scrape = (pack, cb) => {
 		running++;
 		let error;
 		let encoder = lzma.createStream('easyEncoder', {preset: 9});
-		let outstream = fs.createWriteStream(config.data.tenderapi + 'import/' + filename + '.xz');
+		let outstream = fs.createWriteStream(path.join(config.data.tenderapi, 'import', filename + '.xz'));
 		outstream.on('finish', function () {
 			if (!error) {
-				fs.unlink(config.data.tenderapi + 'import/' + filename);
+				fs.unlink(path.join(config.data.tenderapi, 'import', filename));
 				pack.files.push(filename + '.xz');
 				console.log(filename + '.xz', 'saved.');
 			} else {
 				pack.errors.push(filename);
 			}
 			pack.page = page;
-			fs.writeFileSync(config.data.tenderapi + 'package_continue.json', JSON.stringify(pack, null, '\t'));
+			fs.writeFileSync(path.join(config.data.tenderapi, 'package_continue.json'), JSON.stringify(pack, null, '\t'));
 			running--;
 			if (done && running == 0) cb();
 		});
 		outstream.on('open', function () {
-			fs.createReadStream(config.data.tenderapi + 'import/' + filename).pipe(encoder).pipe(outstream);
+			fs.createReadStream(path.join(config.data.tenderapi, 'import', filename)).pipe(encoder).pipe(outstream);
 		});
 		outstream.on('error', function (err) {
 			error = err;
@@ -63,7 +63,7 @@ let scrape = (pack, cb) => {
 	let get = function (page, retry, next) {
 		console.log(now() + ' requesting page: ' + page);
 		let filename = config.api.main + '_' + timestamp2filename(pack.timestamp) + '_' + lpad(page) + '.json';
-		let filestream = fs.createWriteStream(config.data.tenderapi + 'import/' + filename);
+		let filestream = fs.createWriteStream(path.join(config.data.tenderapi, 'import', filename));
 		let url = 'http://' + config.tenderapi.host + ':' + config.tenderapi.port + '/' + config.api.main + '/timestamp/' + pack.timestamp + (config.api.sub ? config.api.sub : '' ) + '/page/' + page;
 		request
 			.get(url,
@@ -110,27 +110,27 @@ let start = () => {
 		errors: []
 	};
 
-	if (fs.existsSync(config.data.tenderapi + 'package_continue.json')) {
+	if (fs.existsSync(path.join(config.data.tenderapi, 'package_continue.json'))) {
 		console.log('Continue package found');
-		pack = JSON.parse(fs.readFileSync(config.data.tenderapi + 'package_continue.json').toString());
-	} else if (fs.existsSync(config.data.tenderapi + 'package_next.json')) {
+		pack = JSON.parse(fs.readFileSync(path.join(config.data.tenderapi, 'package_continue.json')).toString());
+	} else if (fs.existsSync(path.join(config.data.tenderapi, 'package_next.json'))) {
 		console.log('Next package found');
-		let nextpackage = JSON.parse(fs.readFileSync(config.data.tenderapi + 'package_next.json').toString());
+		let nextpackage = JSON.parse(fs.readFileSync(path.join(config.data.tenderapi, 'package_next.json')).toString());
 		pack.timestamp = nextpackage.timestamp;
 	} else {
 		console.log('No package definition found, using default values');
 	}
-	if (!fs.existsSync(config.data.tenderapi + 'import'))
-		fs.mkdirSync(config.data.tenderapi + 'import');
+	if (!fs.existsSync(path.join(config.data.tenderapi, 'import')))
+		fs.mkdirSync(path.join(config.data.tenderapi, 'import'));
 	scrape(pack, function (err) {
 		if (err) {
 			console.log('error', err);
 		} else {
-			if (fs.existsSync(config.data.tenderapi + 'package_continue.json')) {
-				fs.unlink(config.data.tenderapi + 'package_continue.json');
+			if (fs.existsSync(path.join(config.data.tenderapi, 'package_continue.json'))) {
+				fs.unlink(path.join(config.data.tenderapi, 'package_continue.json'));
 			}
-			fs.writeFileSync(config.data.tenderapi + 'package_' + timestamp2filename(pack.timestamp) + '.json', JSON.stringify(pack, null, '\t'));
-			fs.writeFileSync(config.data.tenderapi + 'package_next.json', JSON.stringify({timestamp: pack.timestamp}, null, '\t'));
+			fs.writeFileSync(path.join(config.data.tenderapi, 'package_' + timestamp2filename(pack.timestamp) + '.json'), JSON.stringify(pack, null, '\t'));
+			fs.writeFileSync(path.join(config.data.tenderapi, 'package_next.json'), JSON.stringify({timestamp: pack.timestamp}, null, '\t'));
 			console.log('done.')
 		}
 	});
