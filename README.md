@@ -1,6 +1,6 @@
 # Opentender Portal Tender API Scraper
 
-Collects the data from the Tender REST API and saves them into import packages
+Collects the data from the Datlab Tender REST API and saves them into import packages
 
 written in Javascript for NodeJS 6.x
 
@@ -10,7 +10,7 @@ written in Javascript for NodeJS 6.x
 
 - run command `npm install` in the root folder of this repository
 
-- prepare the data folder (see digiwhist/data-folder)
+- prepare the data folder (see https://github.com/digiwhist/opentender-data)
 
 - copy file 'config.dist.js' to 'config.js' and make the changes to reflect your infrastructure
 
@@ -34,5 +34,5 @@ let settings = {
 
 ### Start
 
-`npm run scrape` to run the scrape
+`npm run scrape` to run the scraper
 
