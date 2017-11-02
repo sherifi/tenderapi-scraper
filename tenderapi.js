@@ -7,9 +7,7 @@
  */
 
 const path = require('path');
-const async = require('async');
 const request = require('request');
-const moment = require('moment');
 const fs = require('fs');
 const lzma = require('lzma-native');
 
@@ -17,6 +15,10 @@ const config = require('./config.js');
 
 let timestamp2filename = (timestamp) => {
 	return timestamp.replace(/[\/:\.]/g, '-');
+};
+
+let log = (msg) => {
+	console.log('' + now(), msg);
 };
 
 let scrape = (pack, cb) => {
@@ -32,14 +34,14 @@ let scrape = (pack, cb) => {
 			if (!error) {
 				fs.unlink(path.join(config.data.tenderapi, 'import', filename));
 				pack.files.push(filename + '.xz');
-				console.log(filename + '.xz', 'saved.');
+				log(filename + '.xz saved.');
 			} else {
 				pack.errors.push(filename);
 			}
 			pack.page = page;
 			fs.writeFileSync(path.join(config.data.tenderapi, 'package_continue.json'), JSON.stringify(pack, null, '\t'));
 			running--;
-			if (done && running == 0) cb();
+			if (done && running === 0) cb();
 		});
 		outstream.on('open', function () {
 			fs.createReadStream(path.join(config.data.tenderapi, 'import', filename)).pipe(encoder).pipe(outstream);
@@ -62,43 +64,43 @@ let scrape = (pack, cb) => {
 	};
 
 	let get = function (page, retry, next) {
-		console.log(now() + ' requesting page: ' + page);
+		log('requesting page: ' + page);
 		let filename = config.api.main + '_' + timestamp2filename(pack.timestamp) + '_' + lpad(page) + '.json';
 		let filestream = fs.createWriteStream(path.join(config.data.tenderapi, 'import', filename));
 		let url = 'http://' + config.tenderapi.host + ':' + config.tenderapi.port + '/' + config.api.main + '/timestamp/' + pack.timestamp + (config.api.sub ? config.api.sub : '' ) + '/page/' + page;
 		request
-			.get(url,
-				function (error, response, body) {
-					console.log(now(), 'handling response', 'page:', page);
-					if (!error && response && response.statusCode == 200) {
-						compress(filename, page);
-						if (body.length < 3) {
-							next();
-						} else {
-							get(page + 1, 0, cb);
-						}
+		.get(url,
+			function (error, response, body) {
+				log('handling response page: ' + page);
+				if (!error && response && response.statusCode === 200) {
+					compress(filename, page);
+					if (body.length < 3) {
+						next();
 					} else {
-						if (response)
-							console.log(now(), 'error:', response.statusCode, response.body);
-						if (error)
-							console.log(now(), error);
-						if (retry < 10) {
-							console.log(now(), 'waiting for retry', retry + 1);
-							setTimeout(function () {
-								get(page, retry + 1, cb);
-							}, 5000);
-						} else {
-							next(error || (response && response.statusCode))
-						}
+						get(page + 1, 0, cb);
 					}
-				})
-			.pipe(filestream)
+				} else {
+					if (response)
+						log('error:' + response.statusCode + response.body);
+					if (error)
+						log(error);
+					if (retry < 10) {
+						log('waiting for retry ' + (retry + 1));
+						setTimeout(function () {
+							get(page, retry + 1, cb);
+						}, 5000);
+					} else {
+						next(error || (response && response.statusCode))
+					}
+				}
+			})
+		.pipe(filestream)
 	};
 
 	get(pack.page, 0, function (err) {
 		if (err) return cb(err);
 		done = true;
-		if (running == 0) cb();
+		if (running === 0) cb();
 	});
 };
 
@@ -112,27 +114,27 @@ let start = () => {
 	};
 
 	if (fs.existsSync(path.join(config.data.tenderapi, 'package_continue.json'))) {
-		console.log('Continue package found');
+		log('continue-package found');
 		pack = JSON.parse(fs.readFileSync(path.join(config.data.tenderapi, 'package_continue.json')).toString());
 	} else if (fs.existsSync(path.join(config.data.tenderapi, 'package_next.json'))) {
-		console.log('Next package found');
+		log('next-package found');
 		let nextpackage = JSON.parse(fs.readFileSync(path.join(config.data.tenderapi, 'package_next.json')).toString());
 		pack.timestamp = nextpackage.timestamp;
 	} else {
-		console.log('No package definition found, using default values');
+		log('No package definition found, using default values');
 	}
 	if (!fs.existsSync(path.join(config.data.tenderapi, 'import')))
 		fs.mkdirSync(path.join(config.data.tenderapi, 'import'));
 	scrape(pack, function (err) {
 		if (err) {
-			console.log('error', err);
+			log('error: ' + err);
 		} else {
 			if (fs.existsSync(path.join(config.data.tenderapi, 'package_continue.json'))) {
 				fs.unlink(path.join(config.data.tenderapi, 'package_continue.json'));
 			}
 			fs.writeFileSync(path.join(config.data.tenderapi, 'package_' + timestamp2filename(pack.timestamp) + '.json'), JSON.stringify(pack, null, '\t'));
 			fs.writeFileSync(path.join(config.data.tenderapi, 'package_next.json'), JSON.stringify({timestamp: pack.timestamp}, null, '\t'));
-			console.log('done.')
+			log('done.');
 		}
 	});
 };
