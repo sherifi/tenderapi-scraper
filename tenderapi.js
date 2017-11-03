@@ -17,6 +17,10 @@ let timestamp2filename = (timestamp) => {
 	return timestamp.replace(/[\/:\.]/g, '-');
 };
 
+let now = function () {
+	return new Date();
+};
+
 let log = (msg) => {
 	console.log('' + now(), msg);
 };
@@ -59,9 +63,6 @@ let scrape = (pack, cb) => {
 		return result;
 	};
 
-	let now = function () {
-		return new Date();
-	};
 
 	let get = function (page, retry, next) {
 		log('requesting page: ' + page);
