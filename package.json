@@ -1,6 +1,6 @@
 {
   "name": "tenderapi-scraper",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Scrapes the data from the TenderAPI",
   "author": "okfde",
   "license": "MIT",
@@ -12,8 +12,8 @@
     "scrape": "node tenderapi.js"
   },
   "dependencies": {
-    "async": "^2.1.2",
-    "lzma-native": "^1.5.2",
+    "async": "^2.6.0",
+    "lzma-native": "^3.0.2",
     "mkdirp": "^0.5.1",
     "moment": "^2.14.1",
     "request": "^2.73.0"
