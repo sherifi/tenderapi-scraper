@@ -1,6 +1,6 @@
 {
   "name": "tenderapi-scraper",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Scrapes the data from the TenderAPI",
   "author": "okfde",
   "license": "MIT",
@@ -16,6 +16,7 @@
     "lzma-native": "^3.0.2",
     "mkdirp": "^0.5.1",
     "moment": "^2.14.1",
-    "request": "^2.73.0"
+    "request": "^2.73.0",
+    "winston": "^2.4.0"
   }
 }
