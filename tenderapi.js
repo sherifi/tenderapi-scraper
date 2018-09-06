@@ -7,7 +7,7 @@
  */
 
 const path = require('path');
-const request = require('request');
+const request = require('request').defaults({strictSSL: false});
 const fs = require('fs');
 const winston = require('winston');
 
@@ -122,50 +122,79 @@ let scrape = (pack, cb) => {
 		});
 	};
 
+	let get_token = function () {
+
+	}
+
 	let get = function (timestamp, page, retry, next) {
-		let filename = 'tenderapi_' + lpad(page) + '_' + timestamp2filename(timestamp) + '.json';
-		let filestream = fs.createWriteStream(path.join(config.data.tenderapi, 'import', filename));
-		let url = 'http://' + config.tenderapi.host + ':' + config.tenderapi.port + '/' + config.api.main + '/timestamp/' + timestamp + (config.api.sub ? config.api.sub : '') + '/page/0';
-		logger.info('Data requesting', timestamp, '(' + lpad(page) + ')', url);
-		let time = (new Date().valueOf());
-		request.get(url, (error, response, body) => {
-				if (!error && response && response.statusCode === 200) {
-					let now = (new Date().valueOf());
-					let ms = now - time;
-					measure.count++;
-					measure.sum += ms;
-					logger.info('Data received', Math.round(ms / 1000) + 's' + ' (avg ' + Math.round((measure.sum / measure.count) / 1000) + 's)');
-					compress(filename, timestamp, page);
-					if (body.length < 3) {
-						next();
-					} else {
-						getNextTimeStamp(body, (err, next_timestamp) => {
-							if (next_timestamp !== null) {
-								process.nextTick(() => {
-									get(next_timestamp, page + 1, 0, cb);
-								});
+		var postData = {
+		  	username: config.tenderapi.username,
+		  	password: config.tenderapi.password
+		};
+
+		var postOptions = {
+			strictSSL: false
+		}
+
+		let tokenUrl = 'https://' + config.tenderapi.host + ':' + config.tenderapi.port + '/login';
+		let token = '';
+        request.post({
+    			url: tokenUrl,
+    			form: postData,
+    			agentOptions: postOptions
+  			},
+  			function (error, response, body) {
+		    	let token = JSON.parse(body).auth_token;
+		    	logger.error('error:', error);
+		    	logger.info('statusCode:', response && response.statusCode);
+		    	logger.info('body:', body);
+        		logger.info(token);
+
+        		let filename = 'tenderapi_' + lpad(page) + '_' + timestamp2filename(timestamp) + '.json';
+				let filestream = fs.createWriteStream(path.join(config.data.tenderapi, 'import', filename));
+				let url = 'https://' + config.tenderapi.host + ':' + config.tenderapi.port + '/protected/master_tender?timestamp=' + timestamp + '&page=0&' + '&auth_token=' + token;
+				logger.info('Data requesting', timestamp, '(' + lpad(page) + ')', url);
+				let time = (new Date().valueOf());
+				request.get(url, (error, response, body) => {
+						if (!error && response && response.statusCode === 200) {
+							let now = (new Date().valueOf());
+							let ms = now - time;
+							measure.count++;
+							measure.sum += ms;
+							logger.info('Data received', Math.round(ms / 1000) + 's' + ' (avg ' + Math.round((measure.sum / measure.count) / 1000) + 's)');
+							compress(filename, timestamp, page);
+							if (body.length < 3) {
+								next();
 							} else {
-								cb();
+								getNextTimeStamp(body, (err, next_timestamp) => {
+									if (next_timestamp !== null) {
+										process.nextTick(() => {
+											get(next_timestamp, page + 1, 0, cb);
+										});
+									} else {
+										cb();
+									}
+								});
 							}
-						});
+						} else {
+							if (response)
+								logger.error('Error:' + response.statusCode + response.body);
+							if (error)
+								logger.error(error);
+							if (retry < 10) {
+								logger.info('Waiting for retry ' + (retry + 1));
+								setTimeout(function () {
+									get(timestamp, page, retry + 1, cb);
+								}, 5000);
+							} else {
+								next(error || (response && response.statusCode))
+							}
+						}
 					}
-				} else {
-					if (response)
-						logger.error('Error:' + response.statusCode + response.body);
-					if (error)
-						logger.error(error);
-					if (retry < 10) {
-						logger.info('Waiting for retry ' + (retry + 1));
-						setTimeout(function () {
-							get(timestamp, page, retry + 1, cb);
-						}, 5000);
-					} else {
-						next(error || (response && response.statusCode))
-					}
-				}
+				)
+				.pipe(filestream)
 			}
-		)
-		.pipe(filestream)
+		);
 	};
 
 	get(pack.timestamp, pack.page, 0, function (err) {

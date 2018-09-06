@@ -1,7 +1,9 @@
 let settings = {
 	tenderapi: {  // where the tender api is located
 		host: 'x.x.x.x',
-		port: 4000
+		port: 4000,
+		username: 'username',
+		password: 'password'
 	},
 	data: { // absolute paths to the data folders (see https://github.com/digiwhist/opentender-data)
 		tenderapi: '/var/www/opentender/data/tenderapi'
