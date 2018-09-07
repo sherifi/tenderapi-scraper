@@ -152,7 +152,7 @@ let scrape = (pack, cb) => {
 
         		let filename = 'tenderapi_' + lpad(page) + '_' + timestamp2filename(timestamp) + '.json';
 				let filestream = fs.createWriteStream(path.join(config.data.tenderapi, 'import', filename));
-				let url = 'https://' + config.tenderapi.host + ':' + config.tenderapi.port + '/protected/master_tender?timestamp=' + timestamp + '&page=0&' + '&auth_token=' + token;
+				let url = 'https://' + config.tenderapi.host + ':' + config.tenderapi.port + '/protected/master_tender?timestamp=' + timestamp + '&page=0&' + '&auth_token=' + token + '&opentender=true';
 				logger.info('Data requesting', timestamp, '(' + lpad(page) + ')', url);
 				let time = (new Date().valueOf());
 				request.get(url, (error, response, body) => {
