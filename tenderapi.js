@@ -145,10 +145,7 @@ let scrape = (pack, cb) => {
   			},
   			function (error, response, body) {
 		    	let token = JSON.parse(body).auth_token;
-		    	logger.error('error:', error);
-		    	logger.info('statusCode:', response && response.statusCode);
-		    	logger.info('body:', body);
-        		logger.info(token);
+        		logger.info("Auth token requested: " + token);
 
         		let filename = 'tenderapi_' + lpad(page) + '_' + timestamp2filename(timestamp) + '.json';
 				let filestream = fs.createWriteStream(path.join(config.data.tenderapi, 'import', filename));
