@@ -58,18 +58,22 @@ let lpad = function (val) {
 };
 
 let ensureThreeMilliseconds = function (val) {
-	let a = val.split(':');
-	let s = a[a.length - 1];
-	a = s.split('.');
-	if (a.length === 1) {
-		return val + '.000';
-	}
-	s = a[a.length - 1];
-	while (s.length < 3) {
-		s = s + '0';
-		val = val + '0';
-	}
-	return val;
+    let a = val.split(':');
+    let s = a[a.length - 1];
+    a = s.split('.');
+    if (a.length === 1) {
+        return val + '.000';
+    }
+    s = a[a.length - 1];
+    if (s.length <= 3) {
+        while (s.length < 3) {
+            s = s + '0';
+            val = val + '0';
+        }
+    } else {
+        val = val.substring(0, val.length - (s.length - 3));
+    }
+    return val;
 };
 
 let getNextTimeStamp = function (body, cb) {
